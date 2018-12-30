@@ -1,0 +1,36 @@
+<project>
+    <modelVersion/>
+    <groupId>com.antoman</groupId>
+    <artifactId>flasher</artifactId>
+    <version>0.1</version>
+    <dependencies>
+    
+        <!-- https://mvnrepository.com/artifact/javax.usb/usb-api -->
+        <dependency>
+            <groupId>javax.usb</groupId>
+            <artifactId>usb-api</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/org.usb4java/usb4java-javax -->
+        <dependency>
+            <groupId>org.usb4java</groupId>
+            <artifactId>usb4java-javax</artifactId>
+            <version>1.3.0</version>
+        </dependency>
+    
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+    
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+    </dependencies>
+</project>
