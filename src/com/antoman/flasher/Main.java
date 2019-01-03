@@ -1,11 +1,11 @@
 package com.antoman.flasher;
 
-import com.antoman.flasher.drives.*;
-import com.antoman.flasher.ui.*;
+import com.antoman.flasher.drives.DrivesList;
+import com.antoman.flasher.ui.ErrorFlash;
+import com.antoman.flasher.ui.UI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.slf4j.*;
-
-import javax.usb.UsbException;
 import java.util.Date;
 
 public class Main {
@@ -16,17 +16,23 @@ public class Main {
         logger.info("Started " + (new Date()).toString());
 
         try {
-            DrivesList flashes = new DrivesList();
-
-
-        } catch (IllegalStateException e) {
-            (new ErrorFlash("Failed to initialize USB Services. See logs for details.")).showFlash();
-
+            startUI();
+        } catch (Exception e) {
+            (new ErrorFlash("Program has encountered an unexpected error. Please restart.")).showFlash();
             logger.error("At initialize", e);
         }
 
-        logger.info("Exit " + (new Date()).toString());
+    }
 
+    private static void startUI() {
+        DrivesList flashes = new DrivesList();
+
+        Runnable uiRunner = () -> {
+            UI ui = new UI(flashes);
+            ui.setVisible(true);
+        };
+
+        uiRunner.run();
     }
 
 

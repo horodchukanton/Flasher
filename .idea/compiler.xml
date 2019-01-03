@@ -20,8 +20,8 @@
         <module name="Flasher" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="Flasher" target="1.5" />
+    <bytecodeTargetLevel target="8">
+      <module name="Flasher" target="8" />
     </bytecodeTargetLevel>
   </component>
 </project>

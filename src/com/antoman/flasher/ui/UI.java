@@ -1,57 +1,91 @@
 package com.antoman.flasher.ui;
 
-import java.awt.*;
-import java.awt.event.*;
+import com.antoman.flasher.drives.DrivesList;
+import net.samuelcampos.usbdrivedetector.USBStorageDevice;
+import net.samuelcampos.usbdrivedetector.events.USBStorageEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
 
 public class UI extends JFrame {
-    private JButton button = new JButton("Press");
-    private JTextField input = new JTextField("", 5);
-    private JLabel label = new JLabel("Input:");
-    private JRadioButton radio1 = new JRadioButton("Select this");
-    private JRadioButton radio2 = new JRadioButton("Select that");
-    private JCheckBox check = new JCheckBox("Check", false);
 
-    public UI() {
-        super("Simple Example");
-        this.setBounds(100,100,250,100);
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    private static Logger logger = LoggerFactory.getLogger(UI.class);
 
-        Container container = this.getContentPane();
-        container.setLayout(new GridLayout(3,2,2,2));
-        container.add(label);
-        container.add(input);
+    private static JPanel devicesPanel;
 
-        ButtonGroup group = new ButtonGroup();
-        group.add(radio1);
-        group.add(radio2);
-        container.add(radio1);
+    // USB elements
+    private DrivesList flashes;
 
-        radio1.setSelected(true);
-        container.add(radio2);
-        container.add(check);
-        button.addActionListener(new ButtonEventListener());
-        container.add(button);
-    }
 
-    class ButtonEventListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            String message = "";
-            message += "Button was pressed\n";
-            message += "Text is " + input.getText() + "\n";
-            message += (radio1.isSelected()?"Radio #1":"Radio #2")
-                    + " is selected\n";
-            message += "CheckBox is " + ((check.isSelected())
-                    ?"checked":"unchecked");
-            JOptionPane.showMessageDialog(null,
-                    message,
-                    "Output",
-                    JOptionPane.PLAIN_MESSAGE);
+    public UI(DrivesList flashes) {
+        try {
+            UIManager.setLookAndFeel(
+                    UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+            e.printStackTrace();
         }
+
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.flashes = flashes;
+
+        addUIElements();
+
+        this.setVisible(true);
+
+        flashes.getManager().addDriveListener(this::listRefreshed);
     }
 
     public static void main(String[] args) {
-        UI app = new UI();
-        app.setVisible(true);
+        UI ui = new UI(new DrivesList());
+
     }
+
+    private void addUIElements() {
+        this.setSize(400, 400);
+        this.setLayout(new BorderLayout());
+
+        this.setName("Flasher");
+
+        // Add menu bar
+        JMenuBar menu = new JMenuBar();
+        menu.add(new JMenu("Файл"));
+        this.add(menu, BorderLayout.NORTH);
+
+        // Add device panel
+        devicesPanel = new JPanel();
+        this.add(devicesPanel, BorderLayout.WEST);
+        refreshDevicePanels(devicesPanel);
+
+        // Add exit btn
+
+    }
+
+    private void refreshDevicePanels(JPanel jpanel) {
+        // Build a panel for each drive
+        ArrayList<JPanel> panels = buildDevicePanels(flashes);
+
+        for (JPanel panel : panels) {
+            jpanel.add(panel);
+        }
+    }
+
+    private ArrayList<JPanel> buildDevicePanels(DrivesList drivesList) {
+        ArrayList<JPanel> panels = new ArrayList<>();
+
+        for (USBStorageDevice dev : drivesList) {
+            JPanel panel = new FlashDrivePanel(dev);
+            panels.add(panel);
+        }
+
+        return panels;
+    }
+
+    private void listRefreshed(USBStorageEvent usbStorageEvent) {
+        logger.info(usbStorageEvent.toString());
+        refreshDevicePanels(devicesPanel);
+    }
+
 }

@@ -1,80 +1,61 @@
 package com.antoman.flasher.drives;
 
+import net.samuelcampos.usbdrivedetector.USBDeviceDetectorManager;
+import net.samuelcampos.usbdrivedetector.USBStorageDevice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.usb.*;
-import java.io.UnsupportedEncodingException;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class DrivesList implements Iterable {
+public class DrivesList implements Iterable<USBStorageDevice> {
 
     private static Logger logger = LoggerFactory.getLogger(DrivesList.class);
 
-
-    private List<UsbDevice> drives;
-    public static final boolean REMOVABLE = true;
-
+    private static IgnoredDeviceList ignored;
+    private List<USBStorageDevice> drives;
+    private USBDeviceDetectorManager manager;
 
     public DrivesList() throws IllegalStateException {
-
-        UsbHub root = null;
-        try {
-            root = getRootHub();
-        } catch (UsbException e) {
-            logger.error("Failed to get drives list", e);
-            throw new IllegalStateException(e);
-        }
-
-        List<UsbDevice> flatList = getAllChildDevices(root);
-        List<UsbDevice> flashDrives = new ArrayList<UsbDevice>();
-
-        // Now deffer the drives amongst other devices
-        for (UsbDevice dev : flatList){
-            if (dev.isConfigured() && isOpenable(dev)){
-                try {
-                    System.out.println(dev.getProductString());
-                    flashDrives.add(dev);
-                } catch (UnsupportedEncodingException e) {
-                    logger.error("UnsupportedEncodingException", e);
-                } catch (UsbException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        if (flashDrives.size() < 1){
-            throw  new IllegalStateException("No drives found!");
-        }
-
-        this.drives = flashDrives;
+        manager = new USBDeviceDetectorManager(5000);
+        refresh();
     }
 
-    private boolean isOpenable(UsbDevice dev) {
-        try {
-            dev.getSerialNumberString();
-        } catch (UsbException e) {
-            return false;
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return false;
-        }
+    public static void main(String[] args) {
+        DrivesList dl = new DrivesList();
 
-        return true;
+        for (USBStorageDevice dev : dl) {
+            File file = dev.getRootDirectory();
+            System.out.println(DriveOptions.getDriveUUID(file.getPath()));
+        }
     }
 
-    private List<UsbDevice> getAllChildDevices(UsbHub root) {
-        List<UsbDevice> devices = root.getAttachedUsbDevices();
-        List<UsbDevice> result = new ArrayList<UsbDevice>();
+    public Iterator<USBStorageDevice> iterator() {
+        return drives.iterator();
+    }
 
-        for (UsbDevice dev : devices) {
-            if (dev.isUsbHub()) {
-                logger.info("Found a Hub on: " + dev.toString());
-                result.addAll(getAllChildDevices((UsbHub) dev));
-            } else {
-                logger.info("Usual device on: " + dev.toString());
+    public void refresh() {
+        try {
+            ignored = new IgnoredDeviceList();
+        } catch (IOException e) {
+            logger.error("Cannot read ignored devices file. Will not ignore any", e);
+        }
+
+        drives = getDrivesList();
+    }
+
+    public List<USBStorageDevice> getDrivesList() {
+
+        // Build a list
+        List<USBStorageDevice> result = new ArrayList<>();
+
+        // Ignore greylist devices
+        for (USBStorageDevice dev : manager.getRemovableDevices()) {
+            String uuid = DriveOptions.getDriveUUID(dev.getRootDirectory().getPath());
+            if (!ignored.containsIdentifier(uuid)) {
                 result.add(dev);
             }
         }
@@ -82,13 +63,13 @@ public class DrivesList implements Iterable {
         return result;
     }
 
-    public Iterator iterator() {
-        return drives.iterator();
+    public int size() {
+        return drives.size();
     }
 
-    private UsbHub getRootHub() throws UsbException {
-        UsbServices services = UsbHostManager.getUsbServices();
-        return services.getRootUsbHub();
+    public USBDeviceDetectorManager getManager() {
+        return manager;
     }
+
 
 }
